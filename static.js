@@ -4,14 +4,10 @@ module.exports = function(request, response) {
         response.writeHead(404);
         response.end();
     }
-    const fs = require("fs");
-    var route = request.url.slice(1);
-    console.log("Requested route: " + request.url);
-    if(route.slice(0,11) === "stylesheets") {
-        console.log("Loading content from: " + route);
-        fs.readFile(route, "utf8", function(errors, contents){
+    function serveFile(route, encoding, content_type) {
+        fs.readFile(route, encoding, function(errors, contents){
             if(contents) {
-                response.writeHead(200, {"Content-Type": "text/css"});
+                response.writeHead(200, {"Content-Type": content_type});
                 response.write(contents);
                 response.end();
             }
@@ -20,19 +16,17 @@ module.exports = function(request, response) {
             }
         });
     }
+    const fs = require("fs");
+    var route = request.url.slice(1);
+    console.log("Requested route: " + request.url);
+    if(route.slice(0,11) === "stylesheets") {
+        console.log("Loading content from: " + route);
+        serveFile(route, "utf8", "text/css");
+    }
     else if(route.slice(0,6) === "images") {
         var fe = route.match(/\..*/g)[0].slice(1)
         console.log("Loading " + fe + " from: " + route);
-        fs.readFile(route, function(errors, contents){
-            if(contents) {
-                response.writeHead(200, {"Content-Type": "image/" + fe});
-                response.write(contents);
-                response.end();
-            }
-            else {
-                return_404(response);
-            }
-        });
+        serveFile(route, "", "image/"+fe);
     }
     else {
         if(route.slice(route.length-5, route.length) !== ".html") {
@@ -43,15 +37,6 @@ module.exports = function(request, response) {
         }
         route = "views/" + route;
         console.log("Loading content from: " + route);
-        fs.readFile(route, "utf8", function(errors, contents){
-            if(contents) {
-                response.writeHead(200, {"Content-Type": "text/html"});
-                response.write(contents);
-                response.end();
-            }
-            else {
-                return_404(response);
-            }
-        });
+        serveFile(route, "utf8", "text/html");
     }
 }
